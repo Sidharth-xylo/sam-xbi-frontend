@@ -83,6 +83,9 @@ export default function Performance() {
     const fromRoster = studentRows.find((s) => s.studentId === id) || {};
     return { studentId: id, name: fromRoster.name || fromCompare.name || `#${id}`, performanceScore: fromRoster.performanceScore, perActivity: fromCompare.perActivity || {} };
   });
+  const commonCompareActivities = compareActivities.filter((a) =>
+    compareList.every((s) => s.perActivity?.[String(a.activityId)]?.averageRating != null)
+  );
 
   return (
     <div className="page-stack">
@@ -181,25 +184,29 @@ export default function Performance() {
           {compareList.length >= 2 ? (
             <section className="panel" style={{ "--accent": T.magenta }}>
               <h2><Users size={16} /> Head-to-head — average rating per activity (out of 5)</h2>
-              <div className="compare-grid" style={{ gridTemplateColumns: `minmax(150px, 1.6fr) repeat(${compareList.length}, minmax(72px, 1fr))` }}>
-                <div className="compare-corner">Activity</div>
-                {compareList.map((s) => (
-                  <div key={s.studentId} className="compare-head">
-                    <strong>{s.name}</strong>
-                    <span className="compare-score" style={{ color: tier(s.performanceScore || 0) }}>{s.performanceScore != null ? s.performanceScore : "—"}<em>score</em></span>
-                  </div>
-                ))}
-                {compareActivities.map((a) => (
-                  <React.Fragment key={a.activityId}>
-                    <div className="compare-activity">{a.activityName}</div>
-                    {compareList.map((s) => {
-                      const r = s.perActivity?.[String(a.activityId)]?.averageRating;
-                      return <div key={s.studentId} className="compare-cell" style={{ background: ratingBg(r) }}>{r != null ? r.toFixed(1) : "—"}</div>;
-                    })}
-                  </React.Fragment>
-                ))}
-              </div>
-              <p className="compare-hint">Greener = stronger on that drill. Up to {MAX_COMPARE} students; toggle with the ⊕ in the table.</p>
+              {commonCompareActivities.length ? (
+                <div className="compare-grid" style={{ gridTemplateColumns: `minmax(150px, 1.6fr) repeat(${compareList.length}, minmax(72px, 1fr))` }}>
+                  <div className="compare-corner">Activity</div>
+                  {compareList.map((s) => (
+                    <div key={s.studentId} className="compare-head">
+                      <strong>{s.name}</strong>
+                      <span className="compare-score" style={{ color: tier(s.performanceScore || 0) }}>{s.performanceScore != null ? s.performanceScore : "—"}<em>score</em></span>
+                    </div>
+                  ))}
+                  {commonCompareActivities.map((a) => (
+                    <React.Fragment key={a.activityId}>
+                      <div className="compare-activity">{a.activityName}</div>
+                      {compareList.map((s) => {
+                        const r = s.perActivity?.[String(a.activityId)]?.averageRating;
+                        return <div key={s.studentId} className="compare-cell" style={{ background: ratingBg(r) }}>{r.toFixed(1)}</div>;
+                      })}
+                    </React.Fragment>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-inline">No commonly rated activities for the selected students.</div>
+              )}
+              <p className="compare-hint">Greener = stronger on shared drills. Up to {MAX_COMPARE} students; toggle with the ⊕ in the table.</p>
             </section>
           ) : compareIds.length === 1 ? (
             <div className="empty-inline">Pick one more student (⊕) to compare head-to-head.</div>

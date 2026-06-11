@@ -251,7 +251,7 @@ export function HBar({ data = [], labelKey, valueKey, height = 280, colorBy }) {
   );
 }
 
-export function AttendanceStackedBar({ data = [], labelKey = "batchName", height = 280 }) {
+export function AttendanceStackedBar({ data = [], labelKey = "batchName", height = 280, maxValue, valueSuffix = "" }) {
   if (!data.length) return <EmptyChart height={height} />;
   return (
     <div className="attendance-stack-chart">
@@ -263,9 +263,9 @@ export function AttendanceStackedBar({ data = [], labelKey = "batchName", height
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 4, right: 18, bottom: 4, left: 8 }}>
             <CartesianGrid stroke="rgba(255,255,255,0.06)" horizontal={false} />
-            <XAxis type="number" tick={{ ...axisTick, fill: "#d8d8d8" }} axisLine={false} tickLine={false} />
+            <XAxis type="number" domain={maxValue ? [0, maxValue] : undefined} tick={{ ...axisTick, fill: "#d8d8d8" }} axisLine={false} tickLine={false} />
             <YAxis type="category" dataKey={labelKey} tick={{ ...axisTick, fill: "#e8e8e8" }} axisLine={false} tickLine={false} width={128} />
-            <Tooltip {...tip} />
+            <Tooltip {...tip} formatter={(value, name) => [`${value}${valueSuffix}`, name]} />
             <Bar dataKey="present" name="Present" stackId="attendance" fill="#3ddc97" radius={[0, 0, 0, 0]} maxBarSize={28} />
             <Bar dataKey="absent" name="Absent" stackId="attendance" fill="#ff5470" radius={[0, 7, 7, 0]} maxBarSize={28} />
           </BarChart>

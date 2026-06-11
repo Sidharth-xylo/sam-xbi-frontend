@@ -31,10 +31,19 @@ export default function Operations({ modules = {} }) {
   const attData = attendance.data || {};
   const attBatches = attData.byBatch || [];
   const belowCount = attBatches.filter((b) => b.attendancePct != null && b.attendancePct < threshold).length;
-  const attTrend = (attData.byDate || []).map((d) => {
-    const seen = (d.present || 0) + (d.absent || 0);
-    return { date: d.date, rate: seen ? Math.round((d.present / seen) * 100) : 0 };
+  const attBatchPct = attBatches.map((b) => {
+    const seen = (b.present || 0) + (b.absent || 0);
+    return {
+      ...b,
+      present: seen ? Math.round(((b.present || 0) / seen) * 100) : 0,
+      absent: seen ? Math.round(((b.absent || 0) / seen) * 100) : 0,
+    };
   });
+  const attTrend = (attData.byDate || []).map((d) => ({
+    date: d.date,
+    present: d.present || 0,
+    absent: d.absent || 0,
+  }));
 
   const feesData = fees.data || {};
   const feeBatches = feesData.byBatch || [];
@@ -80,9 +89,20 @@ export default function Operations({ modules = {} }) {
     { header: "Valid till", accessorKey: "validTill", cell: ({ getValue }) => getValue() || "—" },
   ], []);
 
-  const payMethods = (feesData.paymentMethods || []).map((m) => ({ name: m.method, value: m.amount }));
   const attStudents = attData.students || [];
   const feeStudents = feesData.students || [];
+  const payMethods = (feesData.paymentMethods || []).map((m) => ({ name: m.method, value: m.amount }));
+  const planStudents = useMemo(() => {
+    const plans = new Map();
+    feeStudents.filter((row) => row.isActive !== false).forEach((row) => {
+      const name = row.planName || "Unassigned";
+      if (!plans.has(name)) plans.set(name, new Set());
+      plans.get(name).add(row.studentId ?? row.feeId);
+    });
+    return [...plans.entries()]
+      .map(([planName, ids]) => ({ planName, students: ids.size }))
+      .sort((a, b) => b.students - a.students || a.planName.localeCompare(b.planName));
+  }, [feeStudents]);
 
   return (
     <div className="page-stack">
@@ -143,21 +163,17 @@ export default function Operations({ modules = {} }) {
             { key: "batches", label: "Batches tracked", value: attBatches.length, color: T.cyan },
           ]} />
           <article className="panel" style={{ "--accent": T.cyan }}>
-            <h2>Attendance by batch <span className="h2-note">present + absent records</span></h2>
+            <h2>Attendance by batch <span className="h2-note">present + absent percentage</span></h2>
             {attBatches.length
-              ? <AttendanceStackedBar data={attBatches} height={Math.max(160, attBatches.length * 34)} />
+              ? <AttendanceStackedBar data={attBatchPct} height={Math.max(160, attBatches.length * 34)} maxValue={100} valueSuffix="%" />
               : <div className="empty-inline">No attendance recorded in this scope yet.</div>}
           </article>
           {attTrend.length > 1 && (
             <article className="panel" style={{ "--accent": T.lime }}>
-              <h2>Attendance rate trend</h2>
-              <AreaTrend data={attTrend} xKey="date" areas={[{ key: "rate", color: T.lime }]} height={220} />
+              <h2>Attendance count trend</h2>
+              <AreaTrend data={attTrend} xKey="date" areas={[{ key: "present", color: T.green }, { key: "absent", color: T.red }]} height={220} />
             </article>
           )}
-          <section className="panel drill-panel" style={{ "--accent": T.green }}>
-            <h2>Student attendance <span className="h2-note">lowest first</span></h2>
-            <DataTable columns={attStudentColumns} data={attStudents} empty="No student attendance recorded in this scope yet." />
-          </section>
         </>
       )}
 
@@ -185,16 +201,44 @@ export default function Operations({ modules = {} }) {
               <AreaTrend data={revenue.byMonth || feesData.byMonth || []} xKey="month" areas={[{ key: "collected", color: T.magenta }]} height={220} />
             </article>
           </div>
-          {payMethods.length > 0 && (
-            <article className="panel" style={{ "--accent": T.cyan }}>
-              <h2>Payment methods <span className="h2-note">share of collection</span></h2>
-              <Donut data={payMethods} height={240} centerLabel="methods" />
-            </article>
+          {(payMethods.length > 0 || planStudents.length > 0) && (
+            <div className="grid-two">
+              <article className="panel" style={{ "--accent": T.cyan }}>
+                <h2>Payment methods <span className="h2-note">share of collection</span></h2>
+                {payMethods.length
+                  ? <Donut data={payMethods} height={240} centerLabel="methods" />
+                  : <div className="empty-inline">No payment method data in this scope yet.</div>}
+              </article>
+              <article className="panel" style={{ "--accent": T.green }}>
+                <h2>Plan-wise students <span className="h2-note">active enrollments</span></h2>
+                {planStudents.length
+                  ? <HBar data={planStudents} labelKey="planName" valueKey="students" height={Math.max(180, planStudents.length * 38)} colorBy={() => T.green} />
+                  : <div className="empty-inline">No active plan data in this scope yet.</div>}
+              </article>
+            </div>
           )}
-          <section className="panel drill-panel" style={{ "--accent": T.green }}>
-            <h2>Student fee status <span className="h2-note">active first</span></h2>
-            <DataTable columns={feeStudentColumns} data={feeStudents} empty="No fee records in this scope yet." />
-          </section>
+        </>
+      )}
+
+      {(modules.attendance || modules.fees) && (
+        <>
+          <div className="section-head">
+            <h2 className="section-title">Details</h2>
+          </div>
+          <div className={modules.attendance && modules.fees ? "details-grid" : "page-stack"}>
+            {modules.attendance && (
+              <section className="panel drill-panel" style={{ "--accent": T.green }}>
+                <h2>Student attendance <span className="h2-note">lowest first</span></h2>
+                <DataTable columns={attStudentColumns} data={attStudents} empty="No student attendance recorded in this scope yet." />
+              </section>
+            )}
+            {modules.fees && (
+              <section className="panel drill-panel" style={{ "--accent": T.green }}>
+                <h2>Student fee status <span className="h2-note">active first</span></h2>
+                <DataTable columns={feeStudentColumns} data={feeStudents} empty="No fee records in this scope yet." />
+              </section>
+            )}
+          </div>
         </>
       )}
 

@@ -54,7 +54,7 @@ a { color: inherit; text-decoration: none; }
 .user-chip { padding: 7px 11px; border: 1px solid var(--xbi-border); border-radius: 999px; background: rgba(255,255,255,0.03); color: var(--xbi-text-mid); font-size: 12px; }
 .page-stack { display: grid; gap: 18px; }
 
-.filter-bar { display: grid; grid-template-columns: repeat(5, minmax(130px, 1fr)); gap: 12px; padding: 14px; border: 1px solid var(--xbi-border); background: var(--xbi-surface); backdrop-filter: blur(12px); border-radius: 18px; }
+.filter-bar { position: relative; z-index: 30; display: grid; grid-template-columns: repeat(5, minmax(130px, 1fr)); gap: 12px; padding: 14px; border: 1px solid var(--xbi-border); background: var(--xbi-surface); backdrop-filter: blur(12px); border-radius: 18px; }
 .filter-bar label { display: grid; gap: 6px; font-size: 11px; color: var(--xbi-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
 input, .xselect-trigger { width: 100%; min-height: 42px; border: 1px solid var(--xbi-border-hi); border-radius: 12px; padding: 10px 12px; background: rgba(255,255,255,0.04); color: var(--xbi-text); transition: border-color .18s ease, box-shadow .18s ease, background .18s ease; }
 input:hover, .xselect-trigger:hover { border-color: rgba(255,255,255,0.22); background: rgba(255,255,255,0.06); }
@@ -76,6 +76,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 .stat-spark { margin-top: auto; padding-top: 8px; opacity: 0.85; }
 
 .grid-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.details-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
 .panel, .subpanel { background: var(--xbi-surface); border: 1px solid var(--xbi-border); border-radius: 18px; padding: 18px; min-width: 0; overflow: hidden; backdrop-filter: blur(12px); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
 .panel:hover, .subpanel:hover { border-color: var(--xbi-border-hi); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), 0 8px 32px -8px rgba(0,0,0,0.4); }
 .panel h2, .subpanel h3 { position: relative; display: flex; align-items: center; gap: 9px; margin: 0 0 14px; font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
@@ -298,6 +299,10 @@ td { font-family: var(--font-mono); }
   .feed-metric { grid-column: 2; align-items: flex-start; }
 }
 
+@media (max-width: 640px) {
+  .details-grid { grid-template-columns: 1fr; }
+}
+
 /* ---- DeltaBadge ---- */
 .delta-badge { font-family: var(--font-mono); font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
 .delta-badge em { font-style: normal; opacity: 0.7; font-weight: 600; }
@@ -377,13 +382,14 @@ td { font-family: var(--font-mono); }
 
 /* ---- Custom themed dropdown (Select.jsx) ---- */
 .xselect { position: relative; width: 100%; }
+.xselect.open { z-index: 80; }
 .xselect-trigger { display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; text-align: left; font: inherit; }
 .xselect.is-disabled .xselect-trigger { opacity: 0.5; cursor: not-allowed; }
 .xselect-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
 .xselect-value.is-placeholder { color: var(--xbi-muted); }
 .xselect-caret { color: var(--xbi-muted); flex-shrink: 0; transition: transform .22s ease, color .22s ease; }
 .xselect.open .xselect-caret { transform: rotate(180deg); color: var(--sel-accent, var(--xbi-lime)); }
-.xselect-menu { list-style: none; position: absolute; left: 0; right: 0; z-index: 50; margin: 0; padding: 6px; max-height: 268px; overflow-y: auto; border: 1px solid var(--xbi-border-hi); border-radius: 14px; background: rgba(18,18,26,0.97); backdrop-filter: blur(22px) saturate(1.2); box-shadow: 0 26px 60px -22px rgba(0,0,0,0.88), 0 0 0 1px rgba(255,255,255,0.03), inset 0 1px 0 rgba(255,255,255,0.05); display: grid; gap: 2px; animation: xselectIn .17s cubic-bezier(.2,.8,.2,1); }
+.xselect-menu { list-style: none; position: absolute; left: 0; right: 0; z-index: 90; margin: 0; padding: 6px; max-height: 268px; overflow-y: auto; border: 1px solid var(--xbi-border-hi); border-radius: 14px; background: rgba(18,18,26,0.97); backdrop-filter: blur(22px) saturate(1.2); box-shadow: 0 26px 60px -22px rgba(0,0,0,0.88), 0 0 0 1px rgba(255,255,255,0.03), inset 0 1px 0 rgba(255,255,255,0.05); display: grid; gap: 2px; animation: xselectIn .17s cubic-bezier(.2,.8,.2,1); }
 .xselect-menu.drop-down { top: calc(100% + 8px); transform-origin: top center; }
 .xselect-menu.drop-up { bottom: calc(100% + 8px); transform-origin: bottom center; }
 @keyframes xselectIn { from { opacity: 0; transform: translateY(-6px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
