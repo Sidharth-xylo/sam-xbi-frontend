@@ -1,6 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchFilters } from "../api.js";
+import Select from "./Select.jsx";
 
 export default function Filters({ value, onChange }) {
   const filters = useQuery({ queryKey: ["filters", value.venueId, value.sportId, value.batchId], queryFn: () => fetchFilters(value) });
@@ -12,30 +13,23 @@ export default function Filters({ value, onChange }) {
     onChange({ ...value, ...reset, [field]: parsed });
   }
 
+  const opts = (items) => items.map((i) => ({ value: i.id, label: i.name }));
+
   return (
     <section className="filter-bar">
       {data.venues.length > 1 && (
         <label>
           Venue
-          <select value={value.venueId || ""} onChange={(e) => set("venueId", e.target.value)}>
-            <option value="">All accessible</option>
-            {data.venues.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-          </select>
+          <Select value={value.venueId || ""} onChange={(v) => set("venueId", v)} options={opts(data.venues)} placeholder="All accessible" accent="var(--xbi-cyan)" />
         </label>
       )}
       <label>
         Sport
-        <select value={value.sportId || ""} onChange={(e) => set("sportId", e.target.value)}>
-          <option value="">All sports</option>
-          {data.sports.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-        </select>
+        <Select value={value.sportId || ""} onChange={(v) => set("sportId", v)} options={opts(data.sports)} placeholder="All sports" accent="var(--xbi-cyan)" />
       </label>
       <label>
         Batch
-        <select value={value.batchId || ""} onChange={(e) => set("batchId", e.target.value)}>
-          <option value="">All batches</option>
-          {data.batches.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-        </select>
+        <Select value={value.batchId || ""} onChange={(v) => set("batchId", v)} options={opts(data.batches)} placeholder="All batches" accent="var(--xbi-lime)" />
       </label>
       <label>
         From

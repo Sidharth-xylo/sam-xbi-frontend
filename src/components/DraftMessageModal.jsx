@@ -2,6 +2,7 @@ import React from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Copy, RefreshCw, Send, X } from "lucide-react";
 import { draftMessage } from "../api.js";
+import Select from "./Select.jsx";
 
 const ALL_INTENTS = [
   { id: "fee_renewal", label: "Fee renewal", fee: true },
@@ -10,13 +11,6 @@ const ALL_INTENTS = [
   { id: "re_engagement", label: "Re-engagement" },
 ];
 const TONES = [{ id: "friendly", label: "Friendly" }, { id: "formal", label: "Formal" }];
-
-// Strip non-digits and prefix country code 91 for bare 10-digit Indian mobiles.
-function waNumber(mobile) {
-  const digits = String(mobile || "").replace(/\D/g, "");
-  if (!digits) return "";
-  return digits.length === 10 ? `91${digits}` : digits;
-}
 
 function FactChips({ context = {} }) {
   const chips = [];
@@ -39,7 +33,7 @@ export default function DraftMessageModal({ open, onClose, studentId, studentNam
   const intents = ALL_INTENTS.filter((i) => allowFee || !i.fee);
 
   const gen = useMutation({
-    mutationFn: () => draftMessage({ studentId, intent: intentId, channel: "whatsapp", tone }),
+    mutationFn: () => draftMessage({ studentId, intent: intentId, channel: "sms", tone }),
     onSuccess: (data) => setDraft(data.draft || ""),
   });
 
@@ -58,13 +52,8 @@ export default function DraftMessageModal({ open, onClose, studentId, studentNam
   if (!open) return null;
   const ctx = gen.data?.context || {};
   const aiAvailable = gen.data?.aiAvailable;
-  const mobile = waNumber(ctx.mobile);
 
   function copy() { navigator.clipboard?.writeText(draft); }
-  function openWhatsApp() {
-    const base = mobile ? `https://wa.me/${mobile}` : "https://wa.me/";
-    window.open(`${base}?text=${encodeURIComponent(draft)}`, "_blank", "noopener");
-  }
 
   return (
     <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
@@ -79,14 +68,10 @@ export default function DraftMessageModal({ open, onClose, studentId, studentNam
 
         <div className="modal-controls">
           <label>Intent
-            <select value={intentId} onChange={(e) => setIntentId(e.target.value)}>
-              {intents.map((i) => <option key={i.id} value={i.id}>{i.label}</option>)}
-            </select>
+            <Select value={intentId} onChange={setIntentId} clearable={false} options={intents.map((i) => ({ value: i.id, label: i.label }))} accent="var(--xbi-magenta)" />
           </label>
           <label>Tone
-            <select value={tone} onChange={(e) => setTone(e.target.value)}>
-              {TONES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
-            </select>
+            <Select value={tone} onChange={setTone} clearable={false} options={TONES.map((t) => ({ value: t.id, label: t.label }))} accent="var(--xbi-magenta)" />
           </label>
         </div>
 
@@ -103,8 +88,7 @@ export default function DraftMessageModal({ open, onClose, studentId, studentNam
 
         <div className="modal-actions">
           <button className="ghost-button" onClick={() => gen.mutate()} disabled={gen.isPending}><RefreshCw size={15} /> Regenerate</button>
-          <button className="ghost-button" onClick={copy} disabled={!draft}><Copy size={15} /> Copy</button>
-          <button className="button primary-button" onClick={openWhatsApp} disabled={!draft}><Send size={15} /> Open WhatsApp</button>
+          <button className="button primary-button" onClick={copy} disabled={!draft}><Copy size={15} /> Copy message</button>
         </div>
       </div>
     </div>

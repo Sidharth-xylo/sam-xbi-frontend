@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CalendarClock, ClipboardList, Download, IndianRupee, ShieldAlert } from "lucide-react";
-import { downloadExport, fetchAttendance, fetchFees, fetchInsights } from "../api.js";
+import { AlertTriangle, CalendarClock, ClipboardList, IndianRupee, ShieldAlert } from "lucide-react";
+import { fetchAttendance, fetchFees, fetchInsights } from "../api.js";
 import Filters from "../components/Filters.jsx";
 import KpiGrid from "../components/KpiGrid.jsx";
 import DataTable from "../components/DataTable.jsx";
-import { AreaTrend, Donut, HBar } from "../components/Charts.jsx";
+import { AreaTrend, AttendanceStackedBar, Donut, HBar } from "../components/Charts.jsx";
 
 const T = { lime: "#d4ff3a", cyan: "#38f0e8", magenta: "#ff3da8", violet: "#a98aff", orange: "#ff8a3d", red: "#ff5470", green: "#3ddc97", muted: "#b4b4b4" };
 const fmtPct = (v) => (v == null ? "—" : `${v}%`);
@@ -136,7 +136,6 @@ export default function Operations({ modules = {} }) {
         <>
           <div className="section-head">
             <h2 className="section-title"><ClipboardList size={16} /> Attendance</h2>
-            <button className="button" onClick={() => downloadExport("attendance")}><Download size={14} /> Export</button>
           </div>
           <KpiGrid cards={[
             { key: "rate", label: "Attendance rate", value: attData.summary?.attendancePct ?? 0, suffix: "%", color: T.lime },
@@ -144,9 +143,9 @@ export default function Operations({ modules = {} }) {
             { key: "batches", label: "Batches tracked", value: attBatches.length, color: T.cyan },
           ]} />
           <article className="panel" style={{ "--accent": T.cyan }}>
-            <h2>Attendance rate by batch</h2>
+            <h2>Attendance by batch <span className="h2-note">present + absent records</span></h2>
             {attBatches.length
-              ? <HBar data={attBatches} labelKey="batchName" valueKey="attendancePct" height={Math.max(160, attBatches.length * 34)} colorBy={(row) => (row.attendancePct < threshold ? T.red : T.green)} />
+              ? <AttendanceStackedBar data={attBatches} height={Math.max(160, attBatches.length * 34)} />
               : <div className="empty-inline">No attendance recorded in this scope yet.</div>}
           </article>
           {attTrend.length > 1 && (
@@ -167,7 +166,6 @@ export default function Operations({ modules = {} }) {
         <>
           <div className="section-head">
             <h2 className="section-title"><IndianRupee size={16} /> Fees & revenue</h2>
-            <button className="button" onClick={() => downloadExport("fees")}><Download size={14} /> Export</button>
           </div>
           <KpiGrid cards={[
             { key: "collected", label: "Collected", value: `₹${inr(revenue.collected ?? feesData.summary?.collected)}`, color: T.magenta, delta: revenue.momGrowthPct },

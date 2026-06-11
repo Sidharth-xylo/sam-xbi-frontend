@@ -1,12 +1,13 @@
 import React from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
-import { Download, FileText, Link2, MessageSquare, RefreshCw, Send, Sparkles, User } from "lucide-react";
+import { Download, FileText, Link2, MessageSquare, RefreshCw, Sparkles, User } from "lucide-react";
 import { createShareLink, downloadReportCardPdf, fetchFilters, generateReportCard } from "../api.js";
 import Filters from "../components/Filters.jsx";
 import KpiGrid from "../components/KpiGrid.jsx";
 import ReportCardView, { num } from "../components/ReportCardView.jsx";
 import DraftMessageModal from "../components/DraftMessageModal.jsx";
+import Select from "../components/Select.jsx";
 
 const T = { lime: "#d4ff3a", cyan: "#38f0e8", magenta: "#ff3da8", violet: "#a98aff", red: "#ff5470" };
 
@@ -36,26 +37,27 @@ export default function Reports({ modules = {} }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Mint a private, read-only link to the report card and copy it to the clipboard (no
+  // third-party messaging app involved).
   const share = useMutation({
     mutationFn: () => createShareLink(studentId, dates),
     onSuccess: (res) => {
       const url = `${window.location.origin}${res.url}`;
       setShareInfo({ ...res, absolute: url });
-      const headline = data?.narrative?.headline || `${data?.studentName}'s progress report`;
-      window.open(`https://wa.me/?text=${encodeURIComponent(`${headline}\n${url}`)}`, "_blank", "noopener");
+      navigator.clipboard?.writeText(url);
     },
   });
 
-  function pickStudent(event) {
-    setStudentId(event.target.value);
-    setParams(event.target.value ? { studentId: event.target.value } : {});
+  function pickStudent(val) {
+    setStudentId(val);
+    setParams(val ? { studentId: val } : {});
     card.reset();
     setShareInfo(null);
   }
 
   function copyLink() {
     if (shareInfo?.absolute) { navigator.clipboard?.writeText(shareInfo.absolute); return; }
-    share.mutate(); // mint one if not yet created
+    share.mutate(); // mint one (it copies on success)
   }
 
   const metricCards = data ? [
@@ -66,10 +68,9 @@ export default function Reports({ modules = {} }) {
 
   const actionsBar = data && data.status !== "insufficient_data" ? (
     <section className="panel report-actions" style={{ "--accent": T.magenta }}>
-      {/* <button className="button primary-button" onClick={() => share.mutate()} disabled={share.isPending}>
-        <Send size={15} /> {share.isPending ? "Creating link…" : "Share on WhatsApp"}
-      </button> */}
-      <button className="ghost-button" onClick={copyLink}><Link2 size={15} /> Copy link</button>
+      <button className="ghost-button" onClick={copyLink} disabled={share.isPending}>
+        <Link2 size={15} /> {share.isPending ? "Creating link…" : shareInfo ? "Link copied" : "Copy private link"}
+      </button>
       <button className="ghost-button" onClick={() => downloadReportCardPdf(studentId, dates)}><Download size={15} /> Download PDF</button>
       <button className="ghost-button" onClick={() => setDraftOpen(true)}><MessageSquare size={15} /> Draft update</button>
       <button className="ghost-button" onClick={() => card.mutate()} disabled={card.isPending}><RefreshCw size={15} /> Regenerate</button>
@@ -84,10 +85,7 @@ export default function Reports({ modules = {} }) {
       <section className="panel report-picker" style={{ "--accent": T.magenta }}>
         <div className="report-picker-field">
           <span className="eyebrow"><User size={14} /> Student</span>
-          <select value={studentId} onChange={pickStudent}>
-            <option value="">Select a student…</option>
-            {students.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
+          <Select value={studentId} onChange={pickStudent} options={students.map((s) => ({ value: s.id, label: s.name }))} placeholder="Select a student…" accent="var(--xbi-magenta)" />
           <small>{students.length} student{students.length === 1 ? "" : "s"} in your current scope</small>
         </div>
         <button className="button primary-button" disabled={!studentId || card.isPending} onClick={() => card.mutate()}>
@@ -99,7 +97,7 @@ export default function Reports({ modules = {} }) {
         <div className="empty-state">
           <Sparkles size={30} />
           <h2>AI report cards</h2>
-          <p style={{ maxWidth: 560 }}>Pick a student and generate a parent-friendly progress report — skill radar, recent trend, coach notes, and an overall score, ready to share on WhatsApp or download as a PDF.</p>
+          <p style={{ maxWidth: 560 }}>Pick a student and generate a parent-friendly progress report — skill radar, recent trend, coach notes, and an overall score, ready to share as a private link or download as a PDF.</p>
         </div>
       )}
       {card.isPending && <div className="empty-inline">Reading {students.find((s) => String(s.id) === String(studentId))?.name || "student"}'s training history…</div>}
