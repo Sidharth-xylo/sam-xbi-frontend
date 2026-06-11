@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, ChevronRight, Download, FileText, Home, Plus, Users } from "lucide-react";
+import { Check, ChevronRight, FileText, Home, Plus, Users } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { downloadExport, fetchPerformanceBatches, fetchPerformanceCompare, fetchPerformanceStudents, fetchStudentPerformance } from "../api.js";
+import { fetchPerformanceBatches, fetchPerformanceCompare, fetchPerformanceStudents, fetchStudentPerformance } from "../api.js";
 import Filters from "../components/Filters.jsx";
 import KpiGrid from "../components/KpiGrid.jsx";
 import DataTable from "../components/DataTable.jsx";
@@ -100,7 +100,6 @@ export default function Performance() {
             <FileText size={16} /> Report card
           </button>
         )}
-        <button className="button" onClick={() => downloadExport("performance")}><Download size={16} /> Export</button>
       </div>
 
       {/* ===== ALL BATCHES ===== */}

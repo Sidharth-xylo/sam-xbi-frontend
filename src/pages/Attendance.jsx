@@ -5,7 +5,7 @@ import { downloadExport, fetchAttendance } from "../api.js";
 import Filters from "../components/Filters.jsx";
 import KpiGrid from "../components/KpiGrid.jsx";
 import DataTable from "../components/DataTable.jsx";
-import { AreaTrend, Donut, HBar } from "../components/Charts.jsx";
+import { AreaTrend, AttendanceStackedBar, Donut } from "../components/Charts.jsx";
 
 const T = { lime: "#d4ff3a", cyan: "#38f0e8", green: "#3ddc97", red: "#ff5470", violet: "#a98aff" };
 const fmtPct = (v) => (v == null ? "—" : `${v}%`);
@@ -20,7 +20,10 @@ export default function Attendance() {
     { header: "Batch", accessorKey: "batchName" },
     { header: "Present", accessorKey: "present" },
     { header: "Absent", accessorKey: "absent" },
-    { header: "Attendance %", accessorKey: "attendancePct", cell: ({ getValue }) => fmtPct(getValue()) },
+    { header: "Attendance %", accessorKey: "attendancePct", cell: ({ getValue }) => {
+      const v = getValue();
+      return <strong style={{ color: v == null ? "#b4b4b4" : v >= 75 ? T.green : v >= 50 ? T.lime : T.red }}>{fmtPct(v)}</strong>;
+    } },
   ], []);
 
   return (
@@ -42,8 +45,8 @@ export default function Attendance() {
             data={[{ name: "Present", value: s.present || 0 }, { name: "Absent", value: s.absent || 0 }].filter((d) => d.value > 0)} />
         </article>
       </div>
-      <article className="panel" style={{ "--accent": T.cyan }}><h2>Attendance by batch</h2>
-        <HBar data={data.byBatch || []} labelKey="batchName" valueKey="attendancePct" height={Math.max(180, (data.byBatch || []).length * 34)} />
+      <article className="panel" style={{ "--accent": T.cyan }}><h2>Attendance by batch <span className="h2-note">present + absent records</span></h2>
+        <AttendanceStackedBar data={data.byBatch || []} height={Math.max(180, (data.byBatch || []).length * 34)} />
       </article>
       <section className="panel" style={{ "--accent": T.violet }}><h2>Student attendance</h2><DataTable columns={columns} data={data.students || []} /></section>
     </div>
